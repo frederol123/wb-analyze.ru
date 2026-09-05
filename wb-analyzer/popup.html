@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WB Analyzer</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>WB Analyzer</h1>
+  <p class="sub">Анализ цен WB + CSV + градация выгодности</p>
+
+  <button id="analyzeBtn" class="primary">Анализировать страницу</button>
+  <div id="status" class="status"></div>
+
+  <div id="summary" class="summary hidden"></div>
+
+  <div id="tableWrap" class="tableWrap hidden">
+    <div class="toolbar">
+      <span id="count"></span>
+      <button id="downloadBtn" class="small">Скачать CSV</button>
+    </div>
+    <div class="legend">
+      <span class="dot green"></span> Выгодно
+      <span class="dot yellow"></span> Средне
+      <span class="dot red"></span> Сложно
+      <span id="proBadge" class="proBadge hidden">PRO: экспорт без лимита</span>
+    </div>
+    <div class="tableScroll">
+      <table id="resultTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Товар</th><th>Цена</th><th>Отзывы</th><th>Рейтинг</th><th>Продавец</th><th>Выгодность</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="paywall" class="paywall hidden">
+    <p>Бесплатно — до 20 товаров. PRO — без лимита + аналитика.</p>
+    <button id="buyBtn" class="secondary">Активировать PRO (демо)</button>
+    <input id="licenseInput" placeholder="код лицензии (любой)">
+  </div>
+
+  <footer>Подсказка: открой поиск или каталог на wildberries.ru и нажми «Анализировать».</footer>
+</div>
+<script src="config.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

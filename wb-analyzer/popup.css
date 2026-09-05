@@ -1,0 +1,30 @@
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial,sans-serif}
+body{margin:0;width:420px;max-height:600px;background:#0f1115;color:#e6e8eb}
+.wrap{padding:16px}
+h1{margin:0;font-size:18px}
+.sub{margin:4px 0 12px;color:#9aa3b2;font-size:12px}
+button{cursor:pointer;border:0;border-radius:8px;padding:10px 14px;font-weight:600}
+.primary{width:100%;background:#7c5cff;color:#fff}
+.primary:disabled{opacity:.5}
+.small{background:#222631;color:#e6e8eb;padding:6px 10px;font-size:12px}
+.secondary{background:#222631;color:#fff;width:100%;margin-top:8px}
+.status{margin:10px 0;font-size:12px;color:#9aa3b2;min-height:16px}
+.summary{background:#181c24;border:1px solid #222631;border-radius:10px;padding:10px;font-size:12px;line-height:1.5}
+.summary b{color:#fff}
+.hidden{display:none}
+.tableWrap{margin-top:12px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:#9aa3b2}
+.legend{display:flex;gap:8px;align-items:center;font-size:11px;color:#9aa3b2;margin-bottom:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.green{background:#22c55e}.dot.yellow{background:#eab308}.dot.red{background:#ef4444}
+.proBadge{margin-left:auto;background:#7c5cff;color:#fff;padding:2px 6px;border-radius:999px;font-size:10px}
+.tableScroll{max-height:220px;overflow:auto;border:1px solid #222631;border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{position:sticky;top:0;background:#181c24;color:#9aa3b2;text-align:left;padding:6px}
+td{padding:6px;border-top:1px solid #1f2430;vertical-align:top}
+td:nth-child(2){max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{padding:2px 6px;border-radius:999px;font-size:10px;font-weight:700;color:#fff}
+.badge.green{background:#16a34a}.badge.yellow{background:#ca8a04;color:#111}.badge.red{background:#dc2626}
+.paywall{margin-top:12px;background:#181c24;border:1px dashed #7c5cff;border-radius:10px;padding:10px;font-size:12px}
+.paywall input{width:100%;margin-top:6px;background:#0f1115;border:1px solid #222631;color:#fff;border-radius:6px;padding:6px}
+footer{margin-top:12px;font-size:10px;color:#6b7280;text-align:center}
