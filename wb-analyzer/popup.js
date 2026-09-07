@@ -1,4 +1,5 @@
 const analyzeBtn = document.getElementById('analyzeBtn');
+const deepBtn = document.getElementById('deepBtn');
 const statusEl = document.getElementById('status');
 const summaryEl = document.getElementById('summary');
 const tableWrap = document.getElementById('tableWrap');
@@ -48,9 +49,9 @@ function csvEscape(v){
 }
 
 function toCSV(items){
-  const header = ['#','Название','Бренд','Цена','Цена без скидки','Отзывы','Рейтинг','Продавец','Выгодность','Причина','Ссылка'];
+  const header = ['#','Название','Бренд','Цена','Цена без скидки','Скидка %','Отзывы','Рейтинг','Продавец','Рейтинг продавца','Выгодность','Причина','Ссылка'];
   const rows = items.map((it,i)=>[
-    i+1, it.name, it.brand, it.price, it.basicPrice, it.feedbacks, it.rating, it.supplier, it.label, it.reason, it.url
+    i+1, it.name, it.brand, it.price, it.basicPrice, it.discount, it.feedbacks, it.rating, it.supplier, it.supplierRating, it.label, it.reason, it.url
   ].map(csvEscape).join(','));
   return [header.map(csvEscape).join(','), ...rows].join('\n');
 }
@@ -59,11 +60,16 @@ function render(data){
   currentData = data;
   const s = data.summary;
   if (!s) { setStatus('Товары не найдены'); return; }
+  const grade = `<span style="color:#22c55e">🟢 ${s.green}</span> · <span style="color:#eab308">🟡 ${s.yellow}</span> · <span style="color:#ef4444">🔴 ${s.red}</span>`;
+  const mode = data.deep ? 'Глубокий' : 'Быстрый';
   summaryEl.innerHTML = `
-    <b>Запрос:</b> ${data.query || '—'} &nbsp; <b>Товаров:</b> ${s.count}<br>
-    <b>Цена:</b> min ${s.min}₽ · медиана ${s.median}₽ · средн ${s.avg}₽ · max ${s.max}₽<br>
-    <b>Рейтинг средн:</b> ${s.avgRating} &nbsp; <b>Градация:</b> <span style="color:#22c55e">🟢 ${s.green} выгодно</span> · <span style="color:#eab308">🟡 ${s.yellow} средне</span> · <span style="color:#ef4444">🔴 ${s.red} сложно</span>
-    <div style="margin-top:6px;color:#9aa3b2">PRO открывает выгрузку всех строк и полный анализ. Бесплатно — первые 20.</div>
+    <div style="display:flex;justify-content:space-between;gap:8px"><b>${mode} анализ</b><span style="font-size:11px;color:#9aa3b2">${data.query || '—'}</span></div>
+    <b>Товаров:</b> ${s.count} &nbsp;|&nbsp; <b>Цены:</b> min ${s.min}₽ · медиана ${s.median}₽ · средн ${s.avg}₽ · max ${s.max}₽<br>
+    <b>Спрос (Σ отзывов):</b> ${s.totalFb.toLocaleString('ru-RU')} &nbsp;|&nbsp; <b>средн/товар:</b> ${s.avgFb}<br>
+    <b>Насыщенность:</b> ${s.saturation}% товаров с >500 отзывами &nbsp;|&nbsp; <b>Топ-10 отзывов:</b> ${s.concentration}%<br>
+    <b>Скидки:</b> средняя ${s.avgDiscount}% &nbsp;|&nbsp; <b>доля демпинга &lt;70% медианы:</b> ${s.shareCheap.toFixed(1)}%<br>
+    <b>Рейтинг средн:</b> ${s.avgRating} &nbsp;|&nbsp; <b>Градация:</b> ${grade}
+    <div style="margin-top:6px;color:#9aa3b2">PRO открывает выгрузку всех строк и глубокий анализ (300 товаров). Бесплатно — первые 20.</div>
   `;
   summaryEl.classList.remove('hidden');
 
@@ -73,31 +79,43 @@ function render(data){
   itemsToShow.forEach((it,i)=>{
     const tr = document.createElement('tr');
     const cls = it.level === 'green' ? 'green' : it.level === 'red' ? 'red' : 'yellow';
-    tr.innerHTML = `<td>${i+1}</td><td title="${it.name}">${it.name}</td><td>${it.price}₽</td><td>${it.feedbacks}</td><td>${it.rating}</td><td>${it.supplier || it.brand}</td><td><span class="badge ${cls}">${it.label}</span></td>`;
+    const disc = it.discount ? `<td>${it.discount}%</td>` : '<td>—</td>';
+    tr.innerHTML = `<td>${i+1}</td><td title="${it.name}">${it.name}</td><td>${it.price}₽</td>${disc}<td>${it.feedbacks}</td><td>${it.rating}</td><td>${it.supplier || it.brand}</td><td><span class="badge ${cls}">${it.label}</span></td>`;
     tbody.appendChild(tr);
   });
   tableWrap.classList.remove('hidden');
   if (!isPro && data.items.length > 20) paywall.classList.remove('hidden');
   else if (isPro) paywall.classList.add('hidden');
+  deepBtn.classList.toggle('hidden', !isPro);
 }
 
-analyzeBtn.addEventListener('click', async ()=>{
-  setStatus('Анализирую...');
-  analyzeBtn.disabled = true;
+async function runAnalyze(deep){
+  const btn = deep ? deepBtn : analyzeBtn;
+  setStatus(deep ? 'Глубокий анализ (до 300 товаров)...' : 'Анализирую...');
+  btn.disabled = true;
   summaryEl.classList.add('hidden');
   tableWrap.classList.add('hidden');
   try{
     const [tab] = await chrome.tabs.query({active:true, currentWindow:true});
     if (!tab?.id) throw new Error('Нет активной вкладки');
     const isWB = tab.url && tab.url.includes('wildberries');
-    if (!isWB) { setStatus('Открой wildberries.ru (поиск или каталог)'); analyzeBtn.disabled=false; return; }
-    const res = await chrome.tabs.sendMessage(tab.id, {type:'ANALYZE'});
+    if (!isWB) { setStatus('Открой wildberries.ru (поиск или каталог)'); return; }
+    const res = await chrome.tabs.sendMessage(tab.id, {type:'ANALYZE', deep});
     if (!res?.ok) throw new Error(res?.error || 'Ошибка анализа');
     if (!res.items?.length) { setStatus('Ничего не найдено. Попробуй обновить страницу.'); }
-    else { setStatus('Готово — ' + res.items.length + ' товаров'); render(res); }
+    else { setStatus((deep?'Глубокий анализ':'Готово') + ' — ' + res.items.length + ' товаров'); render(res); }
   }catch(e){
     setStatus('Ошибка: ' + e.message);
-  }finally{ analyzeBtn.disabled=false; }
+  }finally{
+    btn.disabled = false;
+    deepBtn.classList.toggle('hidden', !isPro);
+  }
+}
+
+analyzeBtn.addEventListener('click', ()=> runAnalyze(false));
+deepBtn.addEventListener('click', ()=> {
+  if (!isPro) { setStatus('Глубокий анализ доступен в PRO.'); paywall.classList.remove('hidden'); return; }
+  runAnalyze(true);
 });
 
 downloadBtn.addEventListener('click', ()=>{

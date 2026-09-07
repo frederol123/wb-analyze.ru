@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WB Analyzer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Analyzes Wildberries products, profitability grading and CSV export.",
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": ["*://*.wildberries.ru/*", "*://search.wb.ru/*", "*://card.wb.ru/*", "http://localhost/*", "http://127.0.0.1/*", "http://147.45.74.192/*", "https://*/*"],
