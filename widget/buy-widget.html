@@ -1,0 +1,220 @@
+<!doctype html>
+<!--
+  WB Analyzer — Buy Widget (demo)
+  Автономный виджет «Купить PRO»: платёж через ЮKassa, выдача лицензионного ключа.
+  Встраивается на любую страницу. Работает с backend: https://wb-analazuer.ru/api/wb
+-->
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WB Analyzer — Buy Widget demo</title>
+<style>
+  :root{ --acc:#6d28d9; --acc-ink:#4c1d95; --acc-soft:#ede9fe; --ok:#16a34a; --bg:#fafafa; --fg:#18181b; --muted:#71717a; --border:#e4e4e7; --surface:#fff }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);line-height:1.55}
+  .demo-page{max-width:760px;margin:0 auto;padding:40px 20px}
+  .demo-note{background:#eef2ff;border:1px dashed #a5b4fc;border-radius:10px;padding:12px 16px;font-size:13px;color:#3730a3;margin-bottom:24px}
+  /* карточка виджета */
+  .wb-buy{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:420px}
+  .wb-buy h3{margin:0 0 4px;font-size:18px}
+  .wb-buy .sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+  .wb-price{font-size:34px;font-weight:700;letter-spacing:-.02em}
+  .wb-price small{font-size:14px;color:var(--muted);font-weight:500}
+  .wb-perks{list-style:none;margin:14px 0;padding:0;font-size:14px}
+  .wb-perks li{padding:6px 0;border-top:1px solid var(--border);display:flex;gap:8px}
+  .wb-perks li:first-child{border-top:0}
+  .wb-buy .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 18px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-weight:600;font-size:15px;cursor:pointer}
+  .wb-buy .btn:hover{background:var(--acc-ink)}
+  .wb-buy .btn:disabled{opacity:.6;cursor:default}
+  .wb-buy .note{color:var(--muted);font-size:12px;text-align:center;margin-top:10px}
+  /* статус оплаты */
+  .wb-flow{display:none;margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+  .wb-flow.show{display:flex;flex-direction:column;gap:10px}
+  .wb-flow .t{font-weight:650;font-size:14px}
+  .wb-flow .d{color:var(--muted);font-size:13px}
+  .wb-flow .btn-check{display:inline-flex;justify-content:center;padding:10px 14px;border:1px solid var(--acc);background:#fff;color:var(--acc-ink);border-radius:10px;font-weight:600;font-size:14px;cursor:pointer}
+  .wb-flow .btn-check:disabled{opacity:.6}
+  /* модалка ключа */
+  .wb-modal{position:fixed;inset:0;display:none;place-items:center;z-index:60;padding:16px}
+  .wb-modal.show{display:grid}
+  .wb-modal .back{position:absolute;inset:0;background:rgba(24,24,27,.45)}
+  .wb-modal .card{position:relative;width:min(460px,100%);background:var(--surface);border-radius:16px;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+  .wb-modal .card h4{margin:0 0 4px}
+  .wb-modal .card p{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+  .wb-key{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px dashed #a5b4fc;border-radius:10px;padding:12px;margin-bottom:14px}
+  .wb-key code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;font-weight:600;color:var(--acc-ink);flex:1;overflow-wrap:anywhere}
+  .wb-steps{list-style:none;margin:0 0 16px;padding:0;font-size:13px}
+  .wb-steps li{padding:5px 0;border-top:1px solid var(--border)}
+  .wb-steps li:first-child{border-top:0}
+  .wb-actions{display:flex;flex-direction:column;gap:10px}
+  .wb-actions .btn-copy{background:var(--acc);color:#fff;border:0;border-radius:10px;padding:11px;font-weight:600;cursor:pointer}
+  .wb-actions .btn-close{background:transparent;border:1px solid var(--border);border-radius:10px;padding:11px;color:var(--fg);cursor:pointer}
+  .badge-demo{display:inline-block;background:#fef9c3;color:#a16207;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+</style>
+</head>
+<body>
+  <div class="demo-page">
+    <div class="demo-note">Это демо-страница встраиваемого виджета <b>WB Analyzer Buy Widget</b>. На проде блок монтируется на лендинге wb-analazuer.ru. Данные берутся с backend ЮKassa.</div>
+
+    <!-- Встраиваемый виджет: начало -->
+    <div class="wb-buy" data-wb-widget>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <h3>WB Analyzer PRO</h3>
+        <span class="badge-demo" data-wb-chip hidden>демо</span>
+      </div>
+      <p class="sub">Разово · бессрочно · 1 устройство · цена с учётом НПД</p>
+      <div class="wb-price">590 ₽ <small>разовый платёж</small></div>
+      <ul class="wb-perks">
+        <li>✓ Полный анализ страниц Wildberries</li>
+        <li>✓ Полная градация выгодности входа</li>
+        <li>✓ Выгрузка CSV без лимита</li>
+      </ul>
+      <button class="btn" type="button" data-wb-buy>Купить PRO · 590 ₽</button>
+      <div class="note">Оплата через ЮKassa · чек с НПД автоматически</div>
+
+      <div class="wb-flow" data-wb-flow>
+        <div class="t" data-wb-flow-title>Оплата открыта в новой вкладке</div>
+        <div class="d" data-wb-flow-text>Завершите оплату, затем вернитесь и нажмите «Я оплатил — получить ключ».</div>
+        <button class="btn-check" type="button" data-wb-check>Я оплатил — получить ключ</button>
+      </div>
+    </div>
+
+    <!-- Модалка ключа -->
+    <div class="wb-modal" data-wb-modal>
+      <div class="back" data-wb-close></div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <h4 data-wb-title>Ваш лицензионный ключ</h4>
+          <span class="badge-demo" data-wb-chip2 hidden>демо</span>
+        </div>
+        <p data-wb-note>Скопируйте ключ и активируйте его в расширении.</p>
+        <div class="wb-key"><code data-wb-key>…</code></div>
+        <ol class="wb-steps">
+          <li>1. Откройте расширение на странице wildberries.ru</li>
+          <li>2. Нажмите «Активировать PRO»</li>
+          <li>3. Вставьте ключ и подтвердите</li>
+        </ol>
+        <div class="wb-actions">
+          <button class="btn-copy" type="button" data-wb-copy>Скопировать ключ</button>
+          <button class="btn-close" type="button" data-wb-close>Готово</button>
+        </div>
+      </div>
+    </div>
+    <!-- Встраиваемый виджет: конец -->
+
+    <p style="margin-top:32px;font-size:13px;color:var(--muted)">Встраивание: см. widget/README.md · API_BASE: https://wb-analazuer.ru/api/wb</p>
+  </div>
+
+<script>
+(function () {
+  var CFG = {
+    API_BASE: 'https://wb-analazuer.ru/api/wb', // адрес backend
+    PRICE: 590
+  };
+
+  var root = document.querySelector('[data-wb-widget]');
+  if (!root) return;
+
+  var buyBtn    = root.querySelector('[data-wb-buy]');
+  var flow      = root.querySelector('[data-wb-flow]');
+  var flowTitle = root.querySelector('[data-wb-flow-title]');
+  var flowText  = root.querySelector('[data-wb-flow-text]');
+  var checkBtn  = root.querySelector('[data-wb-check]');
+  var modal     = document.querySelector('[data-wb-modal]');
+  var mTitle    = modal.querySelector('[data-wb-title]');
+  var mNote     = modal.querySelector('[data-wb-note]');
+  var mKey      = modal.querySelector('[data-wb-key]');
+  var chip      = root.querySelector('[data-wb-chip]');
+  var chip2     = modal.querySelector('[data-wb-chip2]');
+  var copyBtn   = modal.querySelector('[data-wb-copy]');
+  var LS_KEY = 'wb_buy_widget';
+
+  function storePending(key){ try{ localStorage.setItem(LS_KEY, JSON.stringify({key:key})); }catch(e){} }
+  function getPending(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'null'); }catch(e){ return null; } }
+  function clearPending(){ try{ localStorage.removeItem(LS_KEY); }catch(e){} }
+
+  function openModal(){ modal.classList.add('show'); document.body.style.overflow='hidden'; }
+  function closeModal(){ modal.classList.remove('show'); document.body.style.overflow=''; }
+
+  function showFlow(key){
+    flowTitle.textContent='Оплата открыта в новой вкладке';
+    flowText.textContent='Завершите оплату на странице ЮKassa, затем вернитесь и нажмите кнопку.';
+    checkBtn.textContent='Я оплатил — получить ключ';
+    checkBtn.disabled=false;
+    checkBtn.dataset.key=key||'';
+    flow.classList.add('show');
+    flow.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  function busyFlow(){ checkBtn.disabled=true; checkBtn.textContent='Проверяем оплату…'; }
+  function doneFlow(key){ flow.classList.remove('show'); }
+
+  function showKey(key, demo, note){
+    chip.hidden=!demo; chip2.hidden=!demo;
+    mTitle.textContent = demo ? 'Ваш лицензионный ключ' : 'Оплата подтверждена ✓';
+    mNote.textContent = note;
+    mKey.textContent = key||'—';
+    openModal();
+  }
+
+  function verify(key){
+    busyFlow();
+    fetch(CFG.API_BASE + '/licenses/check', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({license_key:key})
+    }).then(function(r){return r.json();})
+    .then(function(j){
+      if (j.success && j.data && j.data.is_valid){
+        clearPending(); doneFlow();
+        showKey(key, false, 'Платёж подтверждён. Скопируйте ключ и активируйте его в расширении: Активировать PRO → вставить ключ.');
+      } else {
+        flowTitle.textContent='Оплата ещё не завершена';
+        flowText.textContent='Если вы уже оплатили — нажмите кнопку ещё раз через несколько секунд.';
+        checkBtn.disabled=false; checkBtn.textContent='Проверить ещё раз';
+      }
+    }).catch(function(){
+      flowTitle.textContent='Не удалось проверить оплату';
+      flowText.textContent='Проверьте интернет и нажмите кнопку ещё раз.';
+      checkBtn.disabled=false; checkBtn.textContent='Повторить';
+    });
+  }
+
+  buyBtn.addEventListener('click', function(){
+    if (buyBtn.disabled) return;
+    buyBtn.disabled=true; var orig=buyBtn.textContent; buyBtn.textContent='Создаём платёж…';
+    fetch(CFG.API_BASE + '/licenses', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({amount: CFG.PRICE})
+    }).then(function(r){return r.json();})
+    .then(function(j){
+      if (!j.success) throw new Error(j.error||'Ошибка');
+      var data=j.data||{};
+      if (data.confirmation_url){
+        storePending(data.license_key);
+        window.open(data.confirmation_url,'_blank','noopener');
+        showFlow(data.license_key);
+      } else if (j.demo){
+        clearPending(); flow.classList.remove('show');
+        showKey(data.license_key, true, 'Демо-режим: платёж не списывается, ключ выдаётся сразу. Скопируйте и активируйте в расширении.');
+      } else { throw new Error('Пустой ответ платежа'); }
+    })
+    .catch(function(err){ showKey('—', true, 'Не удалось создать платёж: ' + String(err&&err.message?err.message:err)); })
+    .finally(function(){ buyBtn.disabled=false; buyBtn.textContent=orig; });
+  });
+
+  checkBtn.addEventListener('click', function(){ verify(checkBtn.dataset.key||''); });
+  modal.querySelectorAll('[data-wb-close]').forEach(function(el){ el.addEventListener('click', closeModal); });
+
+  copyBtn.addEventListener('click', function(){
+    var key=mKey.textContent; if(!key||key==='—')return;
+    function done(){ var t=copyBtn.textContent; copyBtn.textContent='Скопировано ✓'; setTimeout(function(){copyBtn.textContent=t;},2000); }
+    if (navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(key).then(done); } else { var ta=document.createElement('textarea'); ta.value=key; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); done(); }
+  });
+
+  // возврат с оплаты — автопроверка
+  var p=getPending();
+  if (p&&p.key){ flow.classList.add('show'); verify(p.key); }
+})();
+</script>
+</body>
+</html>
