@@ -69,7 +69,7 @@ function render(data){
     <b>Насыщенность:</b> ${s.saturation}% товаров с >500 отзывами &nbsp;|&nbsp; <b>Топ-10 отзывов:</b> ${s.concentration}%<br>
     <b>Скидки:</b> средняя ${s.avgDiscount}% &nbsp;|&nbsp; <b>доля демпинга &lt;70% медианы:</b> ${s.shareCheap.toFixed(1)}%<br>
     <b>Рейтинг средн:</b> ${s.avgRating} &nbsp;|&nbsp; <b>Градация:</b> ${grade}
-    <div style="margin-top:6px;color:#9aa3b2">PRO открывает выгрузку всех строк и глубокий анализ (300 товаров). Бесплатно — первые 20.</div>
+    <div style="margin-top:6px;color:#9aa3b2">PRO открывает выгрузку всех строк и глубокий анализ (до 300 товаров — максимум выдачи WB). Бесплатно — первые 20.</div>
   `;
   summaryEl.classList.remove('hidden');
 
@@ -157,19 +157,31 @@ buyBtn.addEventListener('click', async ()=>{
     });
     const j = await r.json();
     if (!j.success) throw new Error(j.error || 'Ошибка создания платежа');
-    chrome.tabs.create({url: j.data.confirmation_url});
-    licenseInput.value = j.data.license_key;
-    licenseInput.placeholder = 'Скопируй ключ, после оплаты нажми Активировать';
-    setStatus('Оплати на открывшейся странице, затем вставь ключ и нажми Активировать');
+    const { license_key, confirmation_url } = j.data || {};
+    if (confirmation_url) {
+      chrome.tabs.create({url: confirmation_url});
+      licenseInput.value = license_key || '';
+      licenseInput.placeholder = 'Скопируй ключ, после оплаты нажми Активировать';
+      setStatus('Оплати на открывшейся странице, затем вставь ключ и нажми Активировать');
+      return;
+    }
+    if (j.demo) {
+      setStatus('Демо-режим: ключ уже выдан');
+    }
+    activatePro(license_key || code);
   }catch(e){
     setStatus('Демо-режим: введи любой код для теста');
-    const fallback = code || ('WB-DEMO-' + Date.now().toString(36).toUpperCase());
-    chrome.storage.local.set({isPro:true, license:fallback}, ()=>{
-      isPro=true;
-      proBadge.classList.remove('hidden');
-      paywall.classList.add('hidden');
-      setStatus('PRO активирован (демо, ЮKassa недоступна)');
-      if (currentData) render(currentData);
-    });
+    activatePro(code);
   }
 });
+
+function activatePro(license){
+  const key = license || ('WB-DEMO-' + Date.now().toString(36).toUpperCase());
+  chrome.storage.local.set({isPro:true, license:key}, ()=>{
+    isPro=true;
+    proBadge.classList.remove('hidden');
+    paywall.classList.add('hidden');
+    setStatus('PRO активирован');
+    if (currentData) render(currentData);
+  });
+}

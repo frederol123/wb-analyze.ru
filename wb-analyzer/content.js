@@ -1,6 +1,6 @@
 (() => {
   const WB_API = 'https://search.wb.ru/exactmatch/ru/common/v4/search';
-  const MAX_PAGES = 3;
+  const MAX_PAGES = 5;
 
   function getQueryFromUrl() {
     const u = new URL(location.href);
@@ -52,9 +52,11 @@
       try {
         const batch = await fetchViaApi(query, page);
         if (!batch.length) break;
-        batch.forEach(it => { if (!seen.has(it.id)) seen.set(it.id, it); });
+        let added = 0;
+        batch.forEach(it => { if (!seen.has(it.id)) { seen.set(it.id, it); added++; } });
+        if (added === 0) break;
         if (batch.length < 20) break;
-        await new Promise(r => setTimeout(r, 250 + Math.random() * 300));
+        await new Promise(r => setTimeout(r, 350 + Math.random() * 400));
       } catch (e) {
         break;
       }
