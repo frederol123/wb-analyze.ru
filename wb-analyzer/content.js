@@ -1,6 +1,5 @@
 (() => {
   const WB_API = 'https://search.wb.ru/exactmatch/ru/common/v4/search';
-  const MAX_PAGES = 5;
 
   function getQueryFromUrl() {
     const u = new URL(location.href);
@@ -46,22 +45,16 @@
     });
   }
 
-  async function fetchDeep(query, maxPages) {
-    const seen = new Map();
-    for (let page = 1; page <= maxPages; page++) {
+  async function fetchTop100(query) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        const batch = await fetchViaApi(query, page);
-        if (!batch.length) break;
-        let added = 0;
-        batch.forEach(it => { if (!seen.has(it.id)) { seen.set(it.id, it); added++; } });
-        if (added === 0) break;
-        if (batch.length < 20) break;
-        await new Promise(r => setTimeout(r, 350 + Math.random() * 400));
+        return await fetchViaApi(query, 1);
       } catch (e) {
-        break;
+        if (!String(e.message).includes('429') || attempt === 2) throw e;
+        await new Promise(r => setTimeout(r, 5000));
       }
     }
-    return [...seen.values()];
+    return [];
   }
 
   function scrapeDom() {
@@ -137,17 +130,16 @@
       (async () => {
         try {
           const q = getQueryFromUrl();
-          const deep = msg.deep === true;
           let items = [];
           if (q) {
-            try { items = await fetchDeep(q, deep ? MAX_PAGES : 1); } catch (e) {}
+            try { items = await fetchTop100(q); } catch (e) {}
           }
           if (!items.length) items = scrapeDom();
           if (!items.length) {
-            try { items = await fetchDeep(q || 'чехол', 1); } catch {}
+            try { items = await fetchTop100(q || 'чехол'); } catch {}
           }
           const result = analyze(items);
-          sendResponse({ ok: true, query: q, deep, ...result });
+          sendResponse({ ok: true, query: q, ...result });
         } catch (e) {
           sendResponse({ ok: false, error: e.message });
         }

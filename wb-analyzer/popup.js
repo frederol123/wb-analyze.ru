@@ -1,5 +1,4 @@
 const analyzeBtn = document.getElementById('analyzeBtn');
-const deepBtn = document.getElementById('deepBtn');
 const statusEl = document.getElementById('status');
 const summaryEl = document.getElementById('summary');
 const tableWrap = document.getElementById('tableWrap');
@@ -61,15 +60,14 @@ function render(data){
   const s = data.summary;
   if (!s) { setStatus('Товары не найдены'); return; }
   const grade = `<span style="color:#22c55e">🟢 ${s.green}</span> · <span style="color:#eab308">🟡 ${s.yellow}</span> · <span style="color:#ef4444">🔴 ${s.red}</span>`;
-  const mode = data.deep ? 'Глубокий' : 'Быстрый';
   summaryEl.innerHTML = `
-    <div style="display:flex;justify-content:space-between;gap:8px"><b>${mode} анализ</b><span style="font-size:11px;color:#9aa3b2">${data.query || '—'}</span></div>
+    <div style="display:flex;justify-content:space-between;gap:8px"><b>Анализ</b><span style="font-size:11px;color:#9aa3b2">${data.query || '—'}</span></div>
     <b>Товаров:</b> ${s.count} &nbsp;|&nbsp; <b>Цены:</b> min ${s.min}₽ · медиана ${s.median}₽ · средн ${s.avg}₽ · max ${s.max}₽<br>
     <b>Спрос (Σ отзывов):</b> ${s.totalFb.toLocaleString('ru-RU')} &nbsp;|&nbsp; <b>средн/товар:</b> ${s.avgFb}<br>
     <b>Насыщенность:</b> ${s.saturation}% товаров с >500 отзывами &nbsp;|&nbsp; <b>Топ-10 отзывов:</b> ${s.concentration}%<br>
     <b>Скидки:</b> средняя ${s.avgDiscount}% &nbsp;|&nbsp; <b>доля демпинга &lt;70% медианы:</b> ${s.shareCheap.toFixed(1)}%<br>
     <b>Рейтинг средн:</b> ${s.avgRating} &nbsp;|&nbsp; <b>Градация:</b> ${grade}
-    <div style="margin-top:6px;color:#9aa3b2">PRO открывает выгрузку всех строк и глубокий анализ (до 300 товаров — максимум выдачи WB). Бесплатно — первые 20.</div>
+    <div style="margin-top:6px;color:#9aa3b2">Анализ покрывает 100 самых релевантных товаров выдачи WB. Бесплатно — первые 20 строк, PRO — все 100 + CSV.</div>
   `;
   summaryEl.classList.remove('hidden');
 
@@ -86,13 +84,11 @@ function render(data){
   tableWrap.classList.remove('hidden');
   if (!isPro && data.items.length > 20) paywall.classList.remove('hidden');
   else if (isPro) paywall.classList.add('hidden');
-  deepBtn.classList.toggle('hidden', !isPro);
 }
 
-async function runAnalyze(deep){
-  const btn = deep ? deepBtn : analyzeBtn;
-  setStatus(deep ? 'Глубокий анализ (до 300 товаров)...' : 'Анализирую...');
-  btn.disabled = true;
+async function runAnalyze(){
+  setStatus('Анализирую 100 самых релевантных товаров...');
+  analyzeBtn.disabled = true;
   summaryEl.classList.add('hidden');
   tableWrap.classList.add('hidden');
   try{
@@ -100,23 +96,18 @@ async function runAnalyze(deep){
     if (!tab?.id) throw new Error('Нет активной вкладки');
     const isWB = tab.url && tab.url.includes('wildberries');
     if (!isWB) { setStatus('Открой wildberries.ru (поиск или каталог)'); return; }
-    const res = await chrome.tabs.sendMessage(tab.id, {type:'ANALYZE', deep});
+    const res = await chrome.tabs.sendMessage(tab.id, {type:'ANALYZE'});
     if (!res?.ok) throw new Error(res?.error || 'Ошибка анализа');
     if (!res.items?.length) { setStatus('Ничего не найдено. Попробуй обновить страницу.'); }
-    else { setStatus((deep?'Глубокий анализ':'Готово') + ' — ' + res.items.length + ' товаров'); render(res); }
+    else { setStatus('Готово — ' + res.items.length + ' товаров'); render(res); }
   }catch(e){
     setStatus('Ошибка: ' + e.message);
   }finally{
-    btn.disabled = false;
-    deepBtn.classList.toggle('hidden', !isPro);
+    analyzeBtn.disabled = false;
   }
 }
 
-analyzeBtn.addEventListener('click', ()=> runAnalyze(false));
-deepBtn.addEventListener('click', ()=> {
-  if (!isPro) { setStatus('Глубокий анализ доступен в PRO.'); paywall.classList.remove('hidden'); return; }
-  runAnalyze(true);
-});
+analyzeBtn.addEventListener('click', ()=> runAnalyze());
 
 downloadBtn.addEventListener('click', ()=>{
   if (!currentData) return;
@@ -161,7 +152,7 @@ buyBtn.addEventListener('click', async ()=>{
     if (confirmation_url) {
       chrome.tabs.create({url: confirmation_url});
       licenseInput.value = license_key || '';
-      licenseInput.placeholder = 'Скопируй ключ, после оплаты нажми Активировать';
+      licenseInput.placeholder = 'После оплаты вставь ключ и нажми Активировать';
       setStatus('Оплати на открывшейся странице, затем вставь ключ и нажми Активировать');
       return;
     }

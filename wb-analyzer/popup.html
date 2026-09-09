@@ -11,8 +11,7 @@
   <h1>WB Analyzer</h1>
   <p class="sub">Анализ цен WB + CSV + градация выгодности</p>
 
-  <button id="analyzeBtn" class="primary">Анализировать страницу</button>
-  <button id="deepBtn" class="primary outline hidden">Глубокий анализ · до 300 товаров (PRO)</button>
+  <button id="analyzeBtn" class="primary">Анализировать 100 товаров</button>
   <div id="status" class="status"></div>
 
   <div id="summary" class="summary hidden"></div>
@@ -26,7 +25,7 @@
       <span class="dot green"></span> Выгодно
       <span class="dot yellow"></span> Средне
       <span class="dot red"></span> Сложно
-      <span id="proBadge" class="proBadge hidden">PRO: экспорт без лимита</span>
+      <span id="proBadge" class="proBadge hidden">PRO: выгрузка всех строк</span>
     </div>
     <div class="tableScroll">
       <table id="resultTable">
@@ -41,12 +40,12 @@
   </div>
 
   <div id="paywall" class="paywall hidden">
-    <p>Бесплатно — до 20 товаров. PRO — без лимита + аналитика.</p>
-    <button id="buyBtn" class="secondary">Активировать PRO (демо)</button>
-    <input id="licenseInput" placeholder="код лицензии (любой)">
+    <p>Бесплатно — первые 20 товаров. PRO — анализ и CSV всех 100.</p>
+    <button id="buyBtn" class="secondary">Активировать PRO</button>
+    <input id="licenseInput" placeholder="код лицензии">
   </div>
 
-  <footer>Подсказка: открой поиск или каталог на wildberries.ru и нажми «Анализировать».</footer>
+  <footer>Открой поиск или каталог на wildberries.ru и нажми «Анализировать 100 товаров».</footer>
 </div>
 <script src="config.js"></script>
 <script src="popup.js"></script>
